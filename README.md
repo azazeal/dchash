@@ -1,8 +1,8 @@
 # dchash
 
 Package `dchash` implements a configurable variation of Dropbox's
-[Content Hash](https://www.dropbox.com/developers/reference/content-hash) in
-idiomatic Go.
+[Content Hash](https://www.dropbox.com/developers/reference/content-hash)
+algorithm in idiomatic Go.
 
 ## Usage
 
