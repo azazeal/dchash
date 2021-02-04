@@ -9,55 +9,86 @@ import (
 	mand "math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	_ "crypto/sha256"
 )
 
-var sums = map[string][]byte{
-	"milky-way-nasa.jpg": decode("485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"),
+var wellKnownSums = []struct {
+	file   string
+	offset int64
+	size   int64
+	exp    string
+}{
+	0: {
+		file: "milky-way-nasa.jpg",
+		size: DefaultBlockSize,
+		exp:  "5fe03e2b2d4bbc75804fab4423cffe766f1b2d2080ad38c43d505e6e8ffc1344",
+	},
+	1: {
+		file:   "milky-way-nasa.jpg",
+		offset: DefaultBlockSize,
+		size:   DefaultBlockSize,
+		exp:    "299b77bc0ba00eba12dbf899ddec86d53312aca8849e7121dab23cbfddff3fed",
+	},
+	2: {
+		file:   "milky-way-nasa.jpg",
+		offset: 8388608,
+		size:   1322815,
+		exp:    "0e7baa366f72ac449f8904c45151bf6a2fc13dd07be47c7da6cbc3cebb437111",
+	},
+	3: {
+		file: "milky-way-nasa.jpg",
+		size: 9711423,
+		exp:  "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0",
+	},
 }
 
-func TestConstants(t *testing.T) {
-	if exp := 1 << 22; DefaultBlockSize != exp {
-		t.Errorf("expected DefaultBlockSize to be %d, got %d", exp, DefaultBlockSize)
-	}
-}
-
-func Test(t *testing.T) {
+func TestWellKnownSums(t *testing.T) {
 	h := New(nil, -1)
-	s := make([]byte, h.Size())
+	got := make([]byte, h.Size())
 
 	_, _ = h.Write([]byte("does Reset work?"))
 
-	for name, exp := range sums {
-		h.Reset()
+	for i := range wellKnownSums {
+		kase := wellKnownSums[i]
 
-		readTestDataFile(t, h, name)
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			h.Reset()
 
-		if got := h.Sum(s[:0]); !bytes.Equal(got, exp) {
-			t.Errorf("exp %x, got %x (file: %s)", exp, got, name)
-		}
+			readPart(t, h, kase.file, kase.offset, kase.size)
+			_ = h.Sum(got[:0])
+
+			if exp := dec(kase.exp); !bytes.Equal(got, exp) {
+				t.Errorf("\ngot: %x\nexp: %x", got, exp)
+			}
+		})
 	}
 }
 
-func readTestDataFile(t *testing.T, w io.Writer, name string) {
+func readPart(t *testing.T, w io.Writer, name string, offset, size int64) {
 	t.Helper()
 
 	path := filepath.Join("testdata", name)
 	f, err := os.Open(path)
 	if err != nil {
-		t.Fatalf("failed opening %s: %v", path, err)
+		t.Fatal(err)
 	}
-
 	defer func() {
 		if err := f.Close(); err != nil {
-			t.Fatalf("failed closing %s: %v", name, err)
+			t.Fatal(err)
 		}
 	}()
 
-	if _, err := io.CopyBuffer(w, f, makeBuf(t)); err != nil {
-		t.Fatalf("failed copying %s: %v", name, err)
+	if _, err = f.Seek(offset, io.SeekStart); err != nil {
+		t.Fatal(err)
+	}
+
+	src := io.LimitReader(f, size)
+
+	if _, err = io.CopyBuffer(w, src, makeBuf(t)); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -81,7 +112,7 @@ func seed(tb testing.TB) int64 {
 	return int64(binary.BigEndian.Uint64(b))
 }
 
-func decode(s string) []byte {
+func dec(s string) []byte {
 	v, err := hex.DecodeString(s)
 	if err != nil {
 		panic(err)

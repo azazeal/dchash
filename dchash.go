@@ -8,27 +8,25 @@ import (
 )
 
 const (
-	// DefaultBlockSize denotes the default block size.
-	DefaultBlockSize = 1 << 22
-
 	// DefaultHash denotes the default Hash.
 	DefaultHash = crypto.SHA256
+
+	// DefaultBlockSize denotes the default block size.
+	DefaultBlockSize = 1 << 22
 )
 
-// New returns a Hash which yields sums according
-// to Dropbox's Content Hash algorithm, more details
-// on which may be found here:
+// New returns a Hash which yields sums according to Dropbox's Content Hash
+// algorithm, more details on which may be found here:
 //
 // https://www.dropbox.com/developers/reference/content-hash
 //
-// Should the given new func be nil, sha256.New will
-// be used in its place.
+// Should the given constructor be nil, sha256.New will be used in its place.
 //
-// Should the given blockSize be less than 1, DefaultBlockSize
-// will be used in its place.
+// Should the given block size be less than 1, DefaultBlockSize will be used in
+// its place.
 //
-// Hashes returned by New are NOT safe for concurrent use
-// by multiple goroutines.
+// Hashes returned by New are NOT safe for concurrent use by multiple
+// goroutines.
 func New(new func() hash.Hash, blockSize int) hash.Hash {
 	if new == nil {
 		new = DefaultHash.New
@@ -64,7 +62,7 @@ func (w *wrapper) Size() int {
 }
 
 func (w *wrapper) Sum(b []byte) []byte {
-	if w.rem > 0 {
+	if w.rem != w.BlockSize() {
 		w.sumBlock()
 	}
 
