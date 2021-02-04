@@ -1,0 +1,56 @@
+name: Build
+
+on:
+  push:
+    tags-ignore:
+      - "**"
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: docker://morphy/revive-action:v2
+        with:
+          config: "./revive.toml"
+          path: "./..."
+
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.15', '1.16']
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+          fetch-depth: 0
+    - name: Run tests
+      if: ${{ matrix.go != '1.16' }}
+      run: go test -race ./...
+    - name: Run tests & generate coverage report
+      if: ${{ matrix.go == '1.16' }}
+      run: |
+        COVERPKG=$(go list ./... | tr '\n' ,)
+        COVERPKG=${COVERPKG%?}
+        go test -race -coverpkg=${COVERPKG} -coverprofile=coverage.out -covermode=atomic ./...
+    - name: Upload coverage report
+      uses: shogo82148/actions-goveralls@v1
+      if: ${{ hashFiles('coverage.out') != '' }}
+      with:
+        path-to-profile: coverage.out
