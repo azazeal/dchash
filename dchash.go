@@ -26,6 +26,9 @@ const (
 //
 // Should the given blockSize be less than 1, DefaultBlockSize
 // will be used in its place.
+//
+// Hashes returned by New are NOT safe for concurrent use
+// by multiple goroutines.
 func New(new func() hash.Hash, blockSize int) hash.Hash {
 	if new == nil {
 		new = DefaultHash.New
