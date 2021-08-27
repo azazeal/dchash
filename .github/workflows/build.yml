@@ -16,10 +16,10 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: docker://morphy/revive-action:v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run linter
+        uses: docker://morphy/revive-action:v2
         with:
           config: "./revive.toml"
           path: "./..."
@@ -38,8 +38,6 @@ jobs:
         go-version: ${{ matrix.go }}
     - name: Checkout code
       uses: actions/checkout@v2
-      with:
-          fetch-depth: 0
     - name: Run tests
       if: ${{ matrix.go != '1.17' }}
       run: go test -race ./...
@@ -50,7 +48,7 @@ jobs:
         COVERPKG=${COVERPKG%?}
         go test -race -coverpkg=${COVERPKG} -coverprofile=coverage.out -covermode=atomic ./...
     - name: Upload coverage report
-      uses: shogo82148/actions-goveralls@v1
       if: ${{ hashFiles('coverage.out') != '' }}
+      uses: shogo82148/actions-goveralls@v1
       with:
         path-to-profile: coverage.out
