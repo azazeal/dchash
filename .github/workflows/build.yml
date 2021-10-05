@@ -39,14 +39,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run tests
-      if: ${{ matrix.go != '1.17' }}
-      run: go test -race ./...
-    - name: Run tests & generate coverage report
-      if: ${{ matrix.go == '1.17' }}
-      run: |
-        go test -race -coverpkg=./... -coverprofile=coverage.out -covermode=atomic ./...
-    - name: Upload coverage report
-      if: ${{ hashFiles('coverage.out') != '' }}
+      run: go test -race -coverpkg=./... -coverprofile=coverage.cov -covermode=atomic ./...
+    - name: Start uploading coverage report
       uses: shogo82148/actions-goveralls@v1
       with:
-        path-to-profile: coverage.out
+        path-to-profile: coverage.cov
+        flag-name: go${{ matrix.go }}
+        parallel: true
+
+  finalize:
+    name: Finalize
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Finish uploading coverage reports
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          parallel-finished: true
