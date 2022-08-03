@@ -20,24 +20,24 @@ const (
 //
 // https://www.dropbox.com/developers/reference/content-hash
 //
-// Should new be nil, DefaultHash.New will be used in its place.
+// Should newFunc be nil, DefaultHash.New will be used in its place.
 //
 // Should blockSize be less than 1, DefaultBlockSize will be used instead.
 //
 // Hashes returned by New are NOT safe for concurrent use by multiple
 // goroutines.
-func New(new func() hash.Hash, blockSize int) hash.Hash {
-	if new == nil {
-		new = DefaultHash.New
+func New(newFunc func() hash.Hash, blockSize int) hash.Hash {
+	if newFunc == nil {
+		newFunc = DefaultHash.New
 	}
 	if blockSize < 1 {
 		blockSize = DefaultBlockSize
 	}
 
-	h := new()
+	h := newFunc()
 	return &wrapper{
 		blk:       h,
-		sum:       new(),
+		sum:       newFunc(),
 		buf:       make([]byte, h.Size()),
 		blockSize: blockSize,
 		rem:       blockSize,
