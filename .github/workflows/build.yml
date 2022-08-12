@@ -12,47 +12,6 @@ on:
       - synchronize
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Run linter
-        uses: docker://morphy/revive-action:v2
-        with:
-          config: "./revive.toml"
-          path: "./..."
-
-  test:
-    name: Test
-    needs: lint
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: ['1.18', '1.19']
-    steps:
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run tests
-      run: go test -race -coverpkg=./... -coverprofile=coverage.cov -covermode=atomic ./...
-    - name: Start uploading coverage report
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        path-to-profile: coverage.cov
-        flag-name: go${{ matrix.go }}
-        parallel: true
-
-  finalize:
-    name: Finalize
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Finish uploading coverage reports
-        uses: shogo82148/actions-goveralls@v1
-        with:
-          parallel-finished: true
+  build:
+    name: Build
+    uses: azazeal/workflows/.github/workflows/golib.yml@v1.0.0
