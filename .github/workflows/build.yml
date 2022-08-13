@@ -11,7 +11,11 @@ on:
       - opened
       - synchronize
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build
-    uses: azazeal/workflows/.github/workflows/golib.yml@v1.0.0
+    uses: azazeal/workflows/.github/workflows/golib.yml@v1.0.1
