@@ -18,4 +18,4 @@ concurrency:
 jobs:
   build:
     name: Build
-    uses: azazeal/workflows/.github/workflows/golib.yml@v1.0.0
+    uses: azazeal/workflows/.github/workflows/golib.yml@v1.0.1
