@@ -1,6 +1,7 @@
 package dchash
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
@@ -10,11 +11,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
-
-	_ "crypto/sha256"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var wellKnownSums = []struct {
@@ -62,7 +58,9 @@ func TestWellKnownSums(t *testing.T) {
 			readPart(t, h, kase.file, kase.offset, kase.size)
 			_ = h.Sum(got[:0])
 
-			assert.Equal(t, dec(kase.exp), got)
+			if exp := dec(kase.exp); !bytes.Equal(exp, got) {
+				t.Errorf("\nexp: %x\ngot: %x", exp, got)
+			}
 		})
 	}
 }
@@ -72,35 +70,41 @@ func readPart(t *testing.T, w io.Writer, name string, offset, size int64) {
 
 	path := filepath.Join("testdata", name)
 	f, err := os.Open(path)
-	require.NoError(t, err)
-
+	if err != nil {
+		t.Fatalf("failed opening %s: %v", path, err)
+	}
 	defer func() {
-		require.NoError(t, f.Close())
+		if err := f.Close(); err != nil {
+			t.Fatalf("failed closing %s: %v", path, err)
+		}
 	}()
 
-	_, err = f.Seek(offset, io.SeekStart)
-	require.NoError(t, err)
+	if _, err = f.Seek(offset, io.SeekStart); err != nil {
+		t.Fatalf("failed seeking to %d in %s: %v", offset, path, err)
+	}
 
 	src := io.LimitReader(f, size)
-	_, err = io.CopyBuffer(w, src, makeBuf(t))
-	require.NoError(t, err)
+	if _, err = io.CopyBuffer(w, src, makeBuf(t)); err != nil {
+		t.Fatalf("failed copying buffer: %v", err)
+	}
 }
 
-func makeBuf(tb testing.TB) []byte {
-	tb.Helper()
+func makeBuf(t *testing.T) []byte {
+	t.Helper()
 
-	src := mand.NewSource(seed(tb))
+	src := mand.NewSource(seed(t))
 	rng := mand.New(src)
 
 	return make([]byte, 1+rng.Intn(1<<8-1))
 }
 
-func seed(tb testing.TB) int64 {
-	tb.Helper()
+func seed(t *testing.T) int64 {
+	t.Helper()
 
 	b := make([]byte, 8)
-	_, err := rand.Read(b)
-	require.NoError(tb, err)
+	if _, err := rand.Read(b); err != nil {
+		t.Fatalf("failed reading seed: %v", err)
+	}
 
 	return int64(binary.BigEndian.Uint64(b))
 }
