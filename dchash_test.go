@@ -74,8 +74,8 @@ func readPart(t *testing.T, w io.Writer, name string, offset, size int64) {
 		t.Fatalf("failed opening %s: %v", path, err)
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
-			t.Fatalf("failed closing %s: %v", path, err)
+		if closeError := f.Close(); closeError != nil {
+			t.Fatalf("failed closing %s: %v", path, closeError)
 		}
 	}()
 
