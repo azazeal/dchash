@@ -93,7 +93,7 @@ func makeBuf(t *testing.T) []byte {
 	t.Helper()
 
 	src := mand.NewSource(seed(t))
-	rng := mand.New(src)
+	rng := mand.New(src) //nolint:gosec // no CSPRNG required
 
 	return make([]byte, 1+rng.Intn(1<<8-1))
 }
