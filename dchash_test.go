@@ -106,7 +106,7 @@ func seed(t *testing.T) int64 {
 		t.Fatalf("failed reading seed: %v", err)
 	}
 
-	return int64(binary.BigEndian.Uint64(b))
+	return int64(binary.BigEndian.Uint64(b)) //nolint:gosec // we're not interested in any overflow
 }
 
 func dec(s string) []byte {
